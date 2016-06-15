@@ -1,0 +1,119 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {"name": "k8s-master"},
+  "spec":
+  {
+    "hostNetwork": true,
+    "volumes":
+    [
+      {
+        "name": "certificates",
+        "hostPath": {"path": "${PATH_TO_CERTS}" }
+      },
+      {
+        "name": "config",
+        "hostPath": {"path": "${PATH_TO_KUBECONFIG}"}
+      },
+      {
+        "name": "rootfs",
+        "hostPath": {"path": "/"}
+      }
+    ],
+    "containers":
+    [
+      {
+        "name": "controller-manager",
+        "image": "hyperkube",
+        "volumeMounts":
+        [
+          {
+            "name": "certificates",
+            "mountPath": "/secret",
+            "readOnly": true
+          },
+          {
+            "name": "config",
+            "mountPath": "/config",
+            "readOnly": false
+          }
+        ],
+        "command":
+        [
+          "/hyperkube",
+          "controller-manager",
+          "--kubeconfig=/config/kubeconfig.yaml",
+          "--service-account-private-key-file=/secret/host.key",
+          "--root-ca-file=/secret/trust.pem",
+          "--v=2"
+        ]
+      },
+      {
+        "name": "apiserver",
+        "image": "hyperkube",
+        "volumeMounts":
+        [
+          {
+            "name": "certificates",
+            "mountPath": "/secret",
+            "readOnly": true
+          },
+          {
+            "name": "config",
+            "mountPath": "/config",
+            "readOnly": false
+          },
+          {
+            "name": "rootfs",
+            "mountPath": "/rootfs",
+            "readOnly": false
+          }
+        ],
+        "command":
+        [
+          "/hyperkube",
+          "apiserver",
+          "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,ResourceQuota",
+          "--allow-privileged=true",
+          "--client-ca-file=/secret/trust.pem",
+          "--etcd-cafile=/secret/trust.pem",
+          "--etcd-certfile=/secret/host.cer",
+          "--etcd-keyfile=/secret/host.key",
+          "--etcd-servers=https://${HOSTNAME0}:4001,https://${HOSTNAME1}:4001,https://${HOSTNAME2}:4001",
+          "--kubelet-certificate-authority=/secret/trust.pem",
+          "--kubelet-client-certificate=/secret/host.cer",
+          "--kubelet-client-key=/secret/host.key",
+          "--kubelet-https=true",
+          "--service-cluster-ip-range=10.0.0.1/24",
+          "--tls-cert-file=/secret/host.cer",
+          "--tls-private-key-file=/secret/host.key",
+          "--v=2"
+        ]
+      },
+      {
+        "name": "scheduler",
+        "image": "hyperkube",
+        "volumeMounts":
+        [
+          {
+            "name": "certificates",
+            "mountPath": "/secret",
+            "readOnly": true
+          },
+          {
+            "name": "config",
+            "mountPath": "/config",
+            "readOnly": false
+          }
+        ],
+        "command":
+        [
+          "/hyperkube",
+          "scheduler",
+          "--kubeconfig=/config/kubeconfig.yaml",
+          "--v=2"
+        ]
+      }
+    ]
+  }
+}

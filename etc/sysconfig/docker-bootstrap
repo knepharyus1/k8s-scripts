@@ -1,0 +1,1 @@
+OPTIONS="--iptables=false --ip-masq=false --bridge=none --pidfile=/var/run/docker-bootstrap.pid --exec-root=/var/run/docker-bootstrap --graph=/data/docker/var/lib/docker-bootstrap"

@@ -1,0 +1,1 @@
+OPTIONS="--icc=false --pidfile=/var/run/docker.pid --exec-root/var/run/docker --graph=/data/docker/var/lib/docker --bip=${FLANNEL_RANGE} --mtu=1472"

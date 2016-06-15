@@ -1,0 +1,19 @@
+[Unit]
+Description=Bootstrap Docker Application Container Engine
+Documentation=https://docs.docker.com
+After=network.target docker-bootstrap.socket
+Requires=docker-bootstrap.socket
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/docker deamon -H fd://
+MountFlags=slave
+LimitNOFILE=1048576
+LimitNPROC=1048576
+LimitCORE=infinity
+TimeoutStartSec=0
+# set delegate yes so that systemd does not reset cgroups of docker containers
+Delegate=yes
+
+[Install]
+WantedBy=multi-user.target
