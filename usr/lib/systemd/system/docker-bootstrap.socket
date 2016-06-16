@@ -6,7 +6,7 @@ PartOf=docker-bootstrap.service
 ListenStream=/var/run/docker-bootstrap.sock
 SocketMode=0660
 SocketUser=root
-SocketGroup=docker
+SocketGroup=dockerroot
 
 [Install]
 WantedBy=sockets.target
