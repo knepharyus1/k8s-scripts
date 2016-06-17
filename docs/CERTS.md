@@ -36,18 +36,36 @@ cat intermediate/certs/intermediate.cert.pem \
     certs/ca.cert.pem > intermediate/certs/ca-chain.cert.pem
 chmod 444 intermediate/certs/ca-chain.cert.pem
 
-# Create cert
-openssl genrsa -aes256 -out /certs/hostname.key.pem
-chmod 400 /certs/hostname.key.pem
-openssl req -key /certs/hostname.key.pem -out /certs/hostname.csr.pem \
+# Create a single cert
+openssl genrsa -out /kubernetes/secret/hostname.key.pem 2048
+chmod 400 /kubernetes/secret/hostname.key.pem
+openssl req -key /kubernetes/secret/hostname.key.pem \
+    -out /kubernetes/secret/hostname.csr.pem \
     -subj '/CN=hostname' -new -sha256
-openssl ca -config /kubernetes/ca/intermediate/openssl.cnf \
+SUBJECTALTNAMES="IP:${hostip}, IP:10.0.0.1" openssl ca -config /kubernetes/ca/intermediate/openssl.cnf \
     -extensions server_cert -days 375 -notext -md sha256 \
-    -in /certs/hostname.csr.pem \
-    -out /certs/hostname.cert.pem
-chmod 444 /certs/hostname.cert.pem
+    -in /kubernetes/secret/hostname.csr.pem \
+    -out /kubernetes/secret/hostname.cert.pem
+chmod 444 /kubernetes/secret/hostname.cert.pem
+
+#### OR do a bunch of certs at once
+hosts="hostip1 hostip2 hostip3"
+for host in $hosts;do
+  mkdir $host
+  openssl genrsa -out /kubernetes/secret/$host/$host.key.pem 2048
+  openssl req -key /kubernetes/secret/$host/$host.key.pem \
+    -out /kubernetes/secret/$host/$host.csr.pem \
+    -subj "/CN=$host" -new -sha256
+  SUBJECTALTNAMES="IP:$host, IP:10.0.0.1" openssl ca -config /kubernetes/ca/intermediate/openssl.cnf \
+    -extensions server_cert -days 375 -notext -md sha256 \
+    -in /kubernetes/secret/$host/$host.csr.pem \
+    -out /kubernetes/secret/$host/$host.cert.pem
+done
+
 
 # Verify cert
 openssl x509 -noout -text \
-    -in /certs/hostname.cert.pem
+    -in /kubernetes/secret/hostname.cert.pem
+openssl verify -CAfile /kuberetes/ca/intermediate/certs/ca-chain.cert.pem \
+    /kubernetes/secret/hostname.cert.pem
 ```
